@@ -63,6 +63,11 @@ static volatile int16_t *inBufferPtr = &adcBuff[0];
 static volatile int16_t *outBufferPtr = &dacBuff[0];
 
 uint8_t dataReadyFlag;
+
+uint8_t playAudio = 1;
+uint32_t lastDebounceTime = 0;
+const uint32_t debounceDelay = 250;  // 50 ms
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -109,14 +114,17 @@ void processData() {
 		leftIn  = INT16_TO_FLOAT * inBufferPtr[n];
 		rightIn = INT16_TO_FLOAT * inBufferPtr[n+1];
 
-		leftOut  = leftIn;
-		rightOut = rightIn;
+		if (playAudio)
+		{
+			leftOut  = leftIn;
+			rightOut = rightIn;
+		}
 
 		outBufferPtr[n]   = (int16_t)(FLOAT_TO_INT16 * leftOut);
 		outBufferPtr[n+1] = (int16_t)(FLOAT_TO_INT16 * rightOut);
 
-		outBufferPtr[n] = inBufferPtr[n];
-		outBufferPtr[n+1] = inBufferPtr[n+1];
+		//outBufferPtr[n] = inBufferPtr[n];
+		//outBufferPtr[n+1] = inBufferPtr[n+1];
 	}
 
 	dataReadyFlag = 0;
@@ -246,6 +254,11 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
+	  if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET && (HAL_GetTick() - lastDebounceTime) > debounceDelay) {
+		  playAudio = !playAudio;
+		  lastDebounceTime = HAL_GetTick();
+	  }
 
     /* USER CODE BEGIN 3 */
 
